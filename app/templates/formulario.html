@@ -13,7 +13,6 @@
         <!-- Navbar -->
         <nav class="navbar">
             <a href="/" class="navbar-brand">
-                <span class="logo-icon">⚙</span>
                 Motor AFD
             </a>
             <ul class="nav-links">
@@ -31,13 +30,13 @@
         <!-- Tabs -->
         <div class="tabs" id="formTabs">
             <button class="tab active" data-tab="crear" id="tabCrear">
-                <span class="tab-icon">✏️</span> Crear
+                Crear
             </button>
             <button class="tab" data-tab="responder" id="tabResponder">
-                <span class="tab-icon">📝</span> Responder
+                Responder
             </button>
             <button class="tab" data-tab="resultados" id="tabResultados">
-                <span class="tab-icon">📊</span> Respuestas
+                Respuestas
             </button>
         </div>
 
@@ -72,14 +71,13 @@
                         <option value="" disabled selected>Tipo de validación…</option>
                     </select>
                     <button type="button" class="btn btn-secondary btn-sm" id="addFieldBtn">
-                        ➕ Agregar
+                        Agregar
                     </button>
                 </div>
 
                 <!-- Dynamic fields container -->
                 <div id="dynamicFields" class="dynamic-fields">
                     <div class="empty-state" id="emptyState">
-                        <div class="empty-icon">📋</div>
                         <p>Aún no has agregado campos.<br>Define un nombre y tipo arriba.</p>
                     </div>
                 </div>
@@ -87,19 +85,19 @@
                 <!-- Create button -->
                 <div class="form-submit-area" id="createArea" style="display:none;">
                     <button type="button" class="btn btn-primary" id="createFormBtn">
-                        🚀 Crear Formulario y Obtener Código
+                        Crear Formulario y Obtener Código
                     </button>
                 </div>
             </div>
 
             <!-- Created success (hidden) -->
             <div class="card card-success" id="createSuccess" style="display:none;">
-                <h2>✅ Formulario Creado</h2>
+                <h2>Formulario Creado</h2>
                 <p class="card-desc" id="createdTitle"></p>
                 <div class="code-display">
                     <span class="code-label">Tu código para compartir:</span>
                     <div class="code-value" id="createdCode"></div>
-                    <button class="btn btn-secondary btn-sm" id="copyCodeBtn">📋 Copiar</button>
+                    <button class="btn btn-secondary btn-sm" id="copyCodeBtn">Copiar</button>
                 </div>
                 <p class="code-hint">Comparte este código con las personas que deben responder el formulario.</p>
             </div>
@@ -108,13 +106,13 @@
         <!-- ========== TAB 2: RESPONDER FORMULARIO ========== -->
         <section class="tab-content" id="panelResponder">
             <div class="card">
-                <h2><span class="card-number">🔑</span> Ingresar Código</h2>
+                <h2>Ingresar Código</h2>
                 <p class="card-desc">Ingresa el código del formulario que deseas responder.</p>
 
                 <div class="code-input-group">
                     <input type="text" id="responderCodigo" placeholder="Ej: ABC123" maxlength="6" autocomplete="off" class="code-input">
                     <button type="button" class="btn btn-primary btn-sm" id="cargarFormBtn">
-                        🔍 Cargar Formulario
+                        Cargar Formulario
                     </button>
                 </div>
                 <div id="responderError" class="field-feedback invalid" style="display:none;"></div>
@@ -129,7 +127,7 @@
 
                 <div class="form-submit-area">
                     <button type="button" class="btn btn-primary" id="enviarRespuestaBtn" disabled>
-                        ✅ Enviar Respuesta
+                        Enviar Respuesta
                     </button>
                 </div>
 
@@ -140,7 +138,7 @@
         <!-- ========== TAB 3: VER RESPUESTAS ========== -->
         <section class="tab-content" id="panelResultados">
             <div class="card">
-                <h2><span class="card-number">🔐</span> Ver Respuestas</h2>
+                <h2>Ver Respuestas</h2>
                 <p class="card-desc">Ingresa el código del formulario y la contraseña de administrador.</p>
 
                 <div class="form-group">
@@ -152,7 +150,7 @@
                     <input type="password" id="resultadosContrasena" placeholder="Contraseña de administrador">
                 </div>
                 <button type="button" class="btn btn-primary" id="verRespuestasBtn" style="margin-top:0.5rem;">
-                    📊 Ver Respuestas
+                    Ver Respuestas
                 </button>
                 <div id="resultadosError" class="field-feedback invalid" style="display:none;"></div>
             </div>
@@ -168,7 +166,6 @@
                     <div id="resultadosTabla"></div>
 
                     <div class="empty-state" id="sinRespuestas" style="display:none;">
-                        <div class="empty-icon">📭</div>
                         <p>Aún no se han recibido respuestas para este formulario.</p>
                     </div>
                 </div>

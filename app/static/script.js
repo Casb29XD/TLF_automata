@@ -36,10 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (data.valid) {
                         valResult.className = 'result valid';
-                        valResult.textContent = `✅ Entrada Aceptada — ${data.type}`;
+                        valResult.textContent = `Entrada Aceptada — ${data.type}`;
                     } else {
                         valResult.className = 'result invalid';
-                        valResult.textContent = '❌ Entrada Rechazada — Ningún patrón coincide';
+                        valResult.textContent = 'Entrada Rechazada — Ningún patrón coincide';
                     }
                 } catch (err) {
                     console.error('Error de red:', err);
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 patterns.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p.name;
-                    opt.textContent = `${getPatternIcon(p.name)} ${p.name}`;
+                    opt.textContent = `${p.name}`;
                     patternSelect.appendChild(opt);
                 });
             });
@@ -184,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fieldDiv.innerHTML = `
                 <div class="field-content">
                     <div class="field-label">
-                        <span>${getPatternIcon(selectedPattern)}</span>
                         ${escapeHtml(etiqueta)}
                     </div>
                     <div class="field-hint">${escapeHtml(patternInfo.hint)}</div>
@@ -278,8 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
             copyCodeBtn.addEventListener('click', () => {
                 const code = document.getElementById('createdCode').textContent;
                 navigator.clipboard.writeText(code).then(() => {
-                    copyCodeBtn.textContent = '✅ Copiado!';
-                    setTimeout(() => { copyCodeBtn.textContent = '📋 Copiar'; }, 2000);
+                    copyCodeBtn.textContent = 'Copiado!';
+                    setTimeout(() => { copyCodeBtn.textContent = 'Copiar'; }, 2000);
                 });
             });
         }
@@ -330,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         fieldDiv.innerHTML = `
                             <div class="field-content">
                                 <div class="field-label">
-                                    <span>${getPatternIcon(p.patron)}</span>
                                     ${escapeHtml(p.etiqueta)}
                                 </div>
                                 <div class="field-hint">${escapeHtml(p.hint)}</div>
@@ -380,13 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (data2.valid) {
                                         input.className = 'field-input field-valid';
                                         fieldDiv.className = 'dynamic-field field-row-valid';
-                                        fb.textContent = '✅ Válido';
+                                        fb.textContent = 'Válido';
                                         fb.className = 'field-feedback valid';
                                         responderState.fieldStates[p.id].valid = true;
                                     } else {
                                         input.className = 'field-input field-invalid';
                                         fieldDiv.className = 'dynamic-field field-row-invalid';
-                                        fb.textContent = '❌ Formato inválido';
+                                        fb.textContent = 'Formato inválido';
                                         fb.className = 'field-feedback invalid';
                                         responderState.fieldStates[p.id].valid = false;
                                     }
@@ -452,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.ok) {
                     resultDiv.innerHTML = `
                         <div class="form-summary">
-                            <h3>✅ Respuesta Enviada Exitosamente</h3>
+                            <h3>Respuesta Enviada Exitosamente</h3>
                             <p>Se guardaron ${data.campos} campos correctamente. ¡Gracias por responder!</p>
                         </div>
                     `;
@@ -461,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     resultDiv.innerHTML = `
                         <div class="form-summary" style="background:var(--accent-rose-glow);border-color:rgba(244,63,94,0.3);">
-                            <h3 style="color:var(--accent-rose);">❌ Error al Enviar</h3>
+                            <h3 style="color:var(--accent-rose);">Error al Enviar</h3>
                             <p style="color:var(--text-secondary);">${escapeHtml(data.error || 'Error desconocido.')}</p>
                         </div>
                     `;
@@ -472,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
             } finally {
                 enviarRespuestaBtn.disabled = false;
-                enviarRespuestaBtn.textContent = '✅ Enviar Respuesta';
+                enviarRespuestaBtn.textContent = 'Enviar Respuesta';
             }
         });
     }
@@ -517,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (res.ok) {
-                    document.getElementById('resultadosTitulo').textContent = `📋 ${data.titulo}`;
+                    document.getElementById('resultadosTitulo').textContent = `${data.titulo}`;
                     document.getElementById('resultadosCount').textContent = `${data.total_respuestas} respuesta(s)`;
 
                     const tablaDiv = document.getElementById('resultadosTabla');
@@ -533,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         let html = '<div class="responses-table-wrapper"><table class="responses-table">';
                         html += '<thead><tr><th>#</th>';
                         data.preguntas.forEach(p => {
-                            html += `<th>${getPatternIcon(p.patron)} ${escapeHtml(p.etiqueta)}</th>`;
+                            html += `<th>${escapeHtml(p.etiqueta)}</th>`;
                         });
                         html += '<th>Fecha</th></tr></thead><tbody>';
 
@@ -585,17 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getPatternIcon(pattern) {
-        const icons = {
-            'Placa Colombiana': '🚗',
-            'Correo Electrónico': '📧',
-            'Teléfono': '📞',
-            'Documento de Identidad': '🪪',
-            'Dirección URL': '🌐',
-            'Fecha': '📅',
-            'Contraseña Segura': '🔒',
-            'Monto de Dinero': '💰',
-        };
-        return icons[pattern] || '📝';
+        return '';
     }
 
     function updatePasswordStrength(fieldId, value) {
