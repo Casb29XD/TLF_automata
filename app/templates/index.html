@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Motor de reconocimiento de lenguajes regulares basado en Autómatas Finitos Deterministas (AFD). Validación y extracción de patrones sin librerías regex.">
+    <title>Motor AFD — Reconocimiento de Lenguajes</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+</head>
+<body>
+    <div class="app-wrapper">
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <span class="logo-icon">⚙</span>
+                Motor AFD
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" class="active" id="nav-motor">Motor</a></li>
+                <li><a href="/formulario" id="nav-form">Formulario</a></li>
+            </ul>
+        </nav>
+
+        <!-- Hero -->
+        <header class="hero">
+            <h1>Motor de Reconocimiento de Lenguajes</h1>
+            <p class="subtitle">Validación y extracción mediante Autómatas Finitos Deterministas — sin librería <code>re</code></p>
+        </header>
+
+        <!-- Card 1: Validación en tiempo real -->
+        <section class="card">
+            <h2><span class="card-number">1</span> Validación Automática en Tiempo Real</h2>
+            <p class="card-desc">Ingresa una cadena. El sistema detectará automáticamente si corresponde a un patrón válido y de qué tipo es.</p>
+            <form id="validateForm">
+                <div class="form-group">
+                    <label for="valText">Cadena a validar</label>
+                    <input type="text" id="valText" name="text"
+                           placeholder="Ejemplo: ABC-1234, info@empresa.com, 15/10/2026..."
+                           autocomplete="off">
+                </div>
+                <div id="valResult" class="result">Esperando entrada…</div>
+            </form>
+        </section>
+
+        <!-- Card 2: Extracción desde texto -->
+        <section class="card">
+            <h2><span class="card-number">2</span> Extracción Inteligente desde Texto</h2>
+            <p class="card-desc">Ingresa un bloque de texto largo. El motor recorrerá linealmente para encontrar y clasificar todas las coincidencias.</p>
+            <form id="extractForm">
+                <div class="form-group">
+                    <label for="extText">Bloque de texto</label>
+                    <textarea id="extText" name="text" rows="5"
+                              placeholder="Pega un texto largo aquí. El motor buscará correos, placas, teléfonos, URLs, fechas y más…"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    🔍 Extraer y Clasificar Coincidencias
+                </button>
+            </form>
+            <div id="extResult" class="result-box" style="display:none;"></div>
+        </section>
+
+        <footer class="footer">
+            Proyecto TLF — Teoría de Lenguajes Formales · Universidad · 2026
+        </footer>
+    </div>
+
+    <script src="/static/script.js?v=3"></script>
+</body>
+</html>

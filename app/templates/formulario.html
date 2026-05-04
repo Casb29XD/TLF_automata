@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Formulario interactivo personalizable con validación en tiempo real mediante Autómatas Finitos Deterministas.">
+    <title>Motor AFD — Formulario Interactivo</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+</head>
+<body>
+    <div class="app-wrapper">
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <span class="logo-icon">⚙</span>
+                Motor AFD
+            </a>
+            <ul class="nav-links">
+                <li><a href="/" id="nav-motor">Motor</a></li>
+                <li><a href="/formulario" class="active" id="nav-form">Formulario</a></li>
+            </ul>
+        </nav>
+
+        <!-- Hero -->
+        <header class="hero">
+            <h1>Formulario Interactivo</h1>
+            <p class="subtitle">Crea tu propio formulario eligiendo qué tipo de dato debe validar cada campo</p>
+        </header>
+
+        <!-- Form Builder -->
+        <section class="card">
+            <h2><span class="card-number">+</span> Agregar Campos</h2>
+            <p class="card-desc">Selecciona un tipo de patrón y agrégalo como campo del formulario. Puedes agregar tantos como desees.</p>
+
+            <div class="form-builder-controls">
+                <select id="patternSelect">
+                    <option value="" disabled selected>Selecciona un tipo de validación…</option>
+                </select>
+                <button type="button" class="btn btn-secondary btn-sm" id="addFieldBtn">
+                    ➕ Agregar campo
+                </button>
+            </div>
+
+            <!-- Dynamic fields container -->
+            <div id="dynamicFields" class="dynamic-fields">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📋</div>
+                    <p>Aún no has agregado campos.<br>Selecciona un tipo arriba y presiona "Agregar campo".</p>
+                </div>
+            </div>
+
+            <!-- Submit area (hidden until fields exist) -->
+            <div class="form-submit-area" id="submitArea" style="display:none;">
+                <button type="button" class="btn btn-primary" id="submitFormBtn" disabled>
+                    ✅ Enviar Formulario
+                </button>
+            </div>
+
+            <!-- Summary (hidden until submitted) -->
+            <div id="formSummary" style="display:none;"></div>
+        </section>
+
+        <footer class="footer">
+            Proyecto TLF — Teoría de Lenguajes Formales · Universidad · 2026
+        </footer>
+    </div>
+
+    <script src="/static/script.js?v=3"></script>
+</body>
+</html>
