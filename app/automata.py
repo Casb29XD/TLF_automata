@@ -332,3 +332,32 @@ password_q0 = 'pw_0_0'
 
 dfa_password = Automata(password_Q, ['<UPPERCASE_LETTERS>', '<LOWERCASE_LETTERS>', '<DIGITS>', '<SPECIALS>'],
                         password_delta, password_q0, password_F)
+
+
+# 8. AFD para Montos de Dinero
+# Acepta formatos: $3000, $1.500, $100.000, $1.000.000
+# El símbolo '$' es obligatorio, seguido de dígitos.
+# Los puntos actúan como separador de miles y deben ir seguidos de exactamente 3 dígitos.
+# Ejemplos válidos: $0, $500, $3000, $1.500, $10.000, $1.000.000
+# Ejemplos inválidos: $, $.500, $1., $1.00, 3000 (sin $)
+
+dinero_Q = ['q0', 'q_dollar', 'q_d1', 'q_dot', 'q_m1', 'q_m2', 'q_m3']
+dinero_sigma = ['$', '<DIGITS>', '.']
+dinero_delta = {
+    'q0': {'$': 'q_dollar'},
+    # Después del '$', esperamos al menos un dígito
+    'q_dollar': {'<DIGITS>': 'q_d1'},
+    # Estado principal: ya tenemos dígitos, podemos seguir con más dígitos o un punto
+    'q_d1': {'<DIGITS>': 'q_d1', '.': 'q_dot'},
+    # Después de un punto, esperamos exactamente 3 dígitos (separador de miles)
+    'q_dot': {'<DIGITS>': 'q_m1'},
+    'q_m1': {'<DIGITS>': 'q_m2'},
+    'q_m2': {'<DIGITS>': 'q_m3'},
+    # Después de 3 dígitos tras el punto, podemos tener otro punto o terminar
+    'q_m3': {'.': 'q_dot'},
+}
+dinero_q0 = 'q0'
+# Aceptamos si tenemos al menos un dígito (q_d1) o un grupo completo de miles (q_m3)
+dinero_F = ['q_d1', 'q_m3']
+
+dfa_dinero = Automata(dinero_Q, dinero_sigma, dinero_delta, dinero_q0, dinero_F)

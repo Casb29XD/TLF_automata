@@ -95,6 +95,36 @@ class TestAPIIntegration(unittest.TestCase):
         self.assertIn("https://sitio.com", texts)
         self.assertIn("25/12/2024", texts)
 
+    # === Tests de Monto de Dinero ===
+    def test_validate_dinero(self):
+        response = self.client.post("/validate", data={"text": "$3000"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["valid"])
+        self.assertEqual(response.json()["type"], "Monto de Dinero")
+
+    def test_validate_dinero_miles(self):
+        response = self.client.post("/validate", data={"text": "$1.500.000"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["valid"])
+        self.assertEqual(response.json()["type"], "Monto de Dinero")
+
+    def test_validate_field_dinero(self):
+        response = self.client.post(
+            "/validate-field",
+            data={"value": "$100.000", "pattern": "Monto de Dinero"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["valid"])
+
+    def test_extract_dinero(self):
+        texto = "El producto cuesta $3000 y el envío $15.000 en total."
+        response = self.client.post("/extract", data={"text": texto})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        dinero_matches = [m["text"] for m in data["matches"] if m["type"] == "Monto de Dinero"]
+        self.assertIn("$3000", dinero_matches)
+        self.assertIn("$15.000", dinero_matches)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,7 +1,7 @@
 import unittest
 from app.automata import (
     dfa_placa, dfa_email, dfa_telefono, dfa_documento,
-    dfa_url, dfa_fecha, dfa_password, extract_matches
+    dfa_url, dfa_fecha, dfa_password, dfa_dinero, extract_matches
 )
 
 
@@ -124,6 +124,28 @@ class TestAutomataPassword(unittest.TestCase):
         self.assertFalse(dfa_password.validate("Abcdefg1"))      # Sin especial
         self.assertFalse(dfa_password.validate("Ab1@"))          # Muy corta (4 chars)
         self.assertFalse(dfa_password.validate(""))
+
+
+class TestAutomataDinero(unittest.TestCase):
+    """Pruebas unitarias — AFD Monto de Dinero"""
+
+    def test_dinero_valido(self):
+        self.assertTrue(dfa_dinero.validate("$3000"))         # Monto simple
+        self.assertTrue(dfa_dinero.validate("$1.500"))        # Con separador de miles
+        self.assertTrue(dfa_dinero.validate("$1.000.000"))    # Millón
+        self.assertTrue(dfa_dinero.validate("$100.000"))      # Cien mil
+        self.assertTrue(dfa_dinero.validate("$0"))            # Cero
+        self.assertTrue(dfa_dinero.validate("$50"))           # Monto pequeño
+        self.assertTrue(dfa_dinero.validate("$999"))          # Tres dígitos
+
+    def test_dinero_invalido(self):
+        self.assertFalse(dfa_dinero.validate("3000"))         # Sin símbolo $
+        self.assertFalse(dfa_dinero.validate("$"))            # Solo símbolo
+        self.assertFalse(dfa_dinero.validate("$.500"))        # Punto sin dígitos antes
+        self.assertFalse(dfa_dinero.validate("$1.00"))        # Grupo incompleto (2 dígitos)
+        self.assertFalse(dfa_dinero.validate("$1."))          # Punto al final
+        self.assertFalse(dfa_dinero.validate("$1.0"))         # Grupo incompleto (1 dígito)
+        self.assertFalse(dfa_dinero.validate(""))             # Vacía
 
 
 class TestExtractMatches(unittest.TestCase):

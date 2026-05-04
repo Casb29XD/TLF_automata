@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Formulario interactivo personalizable con validación en tiempo real mediante Autómatas Finitos Deterministas.">
-    <title>Motor AFD — Formulario Interactivo</title>
-    <link rel="stylesheet" href="/static/style.css?v=3">
+    <meta name="description" content="Crea, comparte y responde formularios con validación automática mediante Autómatas Finitos Deterministas.">
+    <title>Motor AFD — Formularios</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
 </head>
 <body>
     <div class="app-wrapper">
@@ -18,47 +18,161 @@
             </a>
             <ul class="nav-links">
                 <li><a href="/" id="nav-motor">Motor</a></li>
-                <li><a href="/formulario" class="active" id="nav-form">Formulario</a></li>
+                <li><a href="/formulario" class="active" id="nav-form">Formularios</a></li>
             </ul>
         </nav>
 
         <!-- Hero -->
         <header class="hero">
-            <h1>Formulario Interactivo</h1>
-            <p class="subtitle">Crea tu propio formulario eligiendo qué tipo de dato debe validar cada campo</p>
+            <h1>Formularios Inteligentes</h1>
+            <p class="subtitle">Crea formularios validados por AFD, compártelos con un código y recibe respuestas verificadas</p>
         </header>
 
-        <!-- Form Builder -->
-        <section class="card">
-            <h2><span class="card-number">+</span> Agregar Campos</h2>
-            <p class="card-desc">Selecciona un tipo de patrón y agrégalo como campo del formulario. Puedes agregar tantos como desees.</p>
+        <!-- Tabs -->
+        <div class="tabs" id="formTabs">
+            <button class="tab active" data-tab="crear" id="tabCrear">
+                <span class="tab-icon">✏️</span> Crear
+            </button>
+            <button class="tab" data-tab="responder" id="tabResponder">
+                <span class="tab-icon">📝</span> Responder
+            </button>
+            <button class="tab" data-tab="resultados" id="tabResultados">
+                <span class="tab-icon">📊</span> Respuestas
+            </button>
+        </div>
 
-            <div class="form-builder-controls">
-                <select id="patternSelect">
-                    <option value="" disabled selected>Selecciona un tipo de validación…</option>
-                </select>
-                <button type="button" class="btn btn-secondary btn-sm" id="addFieldBtn">
-                    ➕ Agregar campo
-                </button>
-            </div>
+        <!-- ========== TAB 1: CREAR FORMULARIO ========== -->
+        <section class="tab-content active" id="panelCrear">
+            <div class="card">
+                <h2><span class="card-number">1</span> Información del Formulario</h2>
+                <p class="card-desc">Define el título, una descripción opcional y una contraseña para administrar tu formulario.</p>
 
-            <!-- Dynamic fields container -->
-            <div id="dynamicFields" class="dynamic-fields">
-                <div class="empty-state" id="emptyState">
-                    <div class="empty-icon">📋</div>
-                    <p>Aún no has agregado campos.<br>Selecciona un tipo arriba y presiona "Agregar campo".</p>
+                <div class="form-group">
+                    <label for="formTitulo">Título del formulario *</label>
+                    <input type="text" id="formTitulo" placeholder="Ej: Registro de Clientes" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="formDescripcion">Descripción (opcional)</label>
+                    <textarea id="formDescripcion" rows="2" placeholder="Describe el propósito del formulario…"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="formContrasena">Contraseña de administrador *</label>
+                    <input type="password" id="formContrasena" placeholder="Contraseña para ver respuestas y administrar">
+                    <div class="field-hint-text">Quien conozca esta contraseña podrá ver las respuestas recibidas.</div>
                 </div>
             </div>
 
-            <!-- Submit area (hidden until fields exist) -->
-            <div class="form-submit-area" id="submitArea" style="display:none;">
-                <button type="button" class="btn btn-primary" id="submitFormBtn" disabled>
-                    ✅ Enviar Formulario
-                </button>
+            <div class="card">
+                <h2><span class="card-number">2</span> Agregar Campos</h2>
+                <p class="card-desc">Cada campo se validará con un Autómata Finito Determinista. Elige el tipo y agrega tantos como necesites.</p>
+
+                <div class="form-builder-controls">
+                    <input type="text" id="fieldLabel" placeholder="Nombre del campo (ej: Correo del cliente)" class="field-label-input">
+                    <select id="patternSelect">
+                        <option value="" disabled selected>Tipo de validación…</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addFieldBtn">
+                        ➕ Agregar
+                    </button>
+                </div>
+
+                <!-- Dynamic fields container -->
+                <div id="dynamicFields" class="dynamic-fields">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">📋</div>
+                        <p>Aún no has agregado campos.<br>Define un nombre y tipo arriba.</p>
+                    </div>
+                </div>
+
+                <!-- Create button -->
+                <div class="form-submit-area" id="createArea" style="display:none;">
+                    <button type="button" class="btn btn-primary" id="createFormBtn">
+                        🚀 Crear Formulario y Obtener Código
+                    </button>
+                </div>
             </div>
 
-            <!-- Summary (hidden until submitted) -->
-            <div id="formSummary" style="display:none;"></div>
+            <!-- Created success (hidden) -->
+            <div class="card card-success" id="createSuccess" style="display:none;">
+                <h2>✅ Formulario Creado</h2>
+                <p class="card-desc" id="createdTitle"></p>
+                <div class="code-display">
+                    <span class="code-label">Tu código para compartir:</span>
+                    <div class="code-value" id="createdCode"></div>
+                    <button class="btn btn-secondary btn-sm" id="copyCodeBtn">📋 Copiar</button>
+                </div>
+                <p class="code-hint">Comparte este código con las personas que deben responder el formulario.</p>
+            </div>
+        </section>
+
+        <!-- ========== TAB 2: RESPONDER FORMULARIO ========== -->
+        <section class="tab-content" id="panelResponder">
+            <div class="card">
+                <h2><span class="card-number">🔑</span> Ingresar Código</h2>
+                <p class="card-desc">Ingresa el código del formulario que deseas responder.</p>
+
+                <div class="code-input-group">
+                    <input type="text" id="responderCodigo" placeholder="Ej: ABC123" maxlength="6" autocomplete="off" class="code-input">
+                    <button type="button" class="btn btn-primary btn-sm" id="cargarFormBtn">
+                        🔍 Cargar Formulario
+                    </button>
+                </div>
+                <div id="responderError" class="field-feedback invalid" style="display:none;"></div>
+            </div>
+
+            <!-- Formulario cargado (hidden) -->
+            <div class="card" id="responderFormCard" style="display:none;">
+                <h2 id="responderTitulo"></h2>
+                <p class="card-desc" id="responderDesc"></p>
+
+                <div id="responderFields" class="dynamic-fields"></div>
+
+                <div class="form-submit-area">
+                    <button type="button" class="btn btn-primary" id="enviarRespuestaBtn" disabled>
+                        ✅ Enviar Respuesta
+                    </button>
+                </div>
+
+                <div id="respuestaResult" style="display:none;"></div>
+            </div>
+        </section>
+
+        <!-- ========== TAB 3: VER RESPUESTAS ========== -->
+        <section class="tab-content" id="panelResultados">
+            <div class="card">
+                <h2><span class="card-number">🔐</span> Ver Respuestas</h2>
+                <p class="card-desc">Ingresa el código del formulario y la contraseña de administrador.</p>
+
+                <div class="form-group">
+                    <label for="resultadosCodigo">Código del formulario</label>
+                    <input type="text" id="resultadosCodigo" placeholder="Ej: ABC123" maxlength="6" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="resultadosContrasena">Contraseña</label>
+                    <input type="password" id="resultadosContrasena" placeholder="Contraseña de administrador">
+                </div>
+                <button type="button" class="btn btn-primary" id="verRespuestasBtn" style="margin-top:0.5rem;">
+                    📊 Ver Respuestas
+                </button>
+                <div id="resultadosError" class="field-feedback invalid" style="display:none;"></div>
+            </div>
+
+            <!-- Respuestas (hidden) -->
+            <div id="resultadosPanel" style="display:none;">
+                <div class="card">
+                    <div class="results-header">
+                        <h2 id="resultadosTitulo"></h2>
+                        <span class="results-count" id="resultadosCount"></span>
+                    </div>
+
+                    <div id="resultadosTabla"></div>
+
+                    <div class="empty-state" id="sinRespuestas" style="display:none;">
+                        <div class="empty-icon">📭</div>
+                        <p>Aún no se han recibido respuestas para este formulario.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <footer class="footer">
@@ -66,6 +180,6 @@
         </footer>
     </div>
 
-    <script src="/static/script.js?v=3"></script>
+    <script src="/static/script.js?v=5"></script>
 </body>
 </html>

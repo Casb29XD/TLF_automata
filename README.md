@@ -21,7 +21,7 @@ sintácticos y estructurales previamente definidos.
 ```
 proyecto tlf/
 ├── app/
-│   ├── automata.py       # Clase Automata (AFD) + 7 autómatas definidos
+│   ├── automata.py       # Clase Automata (AFD) + 8 autómatas definidos
 │   ├── main.py            # Servidor FastAPI (rutas y lógica)
 │   ├── static/
 │   │   ├── style.css      # Estilos (dark mode, glassmorphism)
@@ -30,7 +30,7 @@ proyecto tlf/
 │       ├── index.html      # Página 1: Motor de reconocimiento
 │       └── formulario.html # Página 2: Formulario interactivo dinámico
 ├── tests/
-│   ├── test_automata.py   # Tests unitarios de los 7 AFD
+│   ├── test_automata.py   # Tests unitarios de los 8 AFD
 │   └── test_api.py        # Tests de integración de la API
 ├── requirements.txt
 └── README.md              # Este archivo
@@ -103,7 +103,7 @@ agrupan caracteres con comportamiento equivalente:
 **Formato**: 3 letras mayúsculas + guión + 4 dígitos (ej: `ABC-1234`)
 
 | Estado | `<UPPERCASE_LETTERS>` | `-` | `<DIGITS>` |
-|--------|----------------------|-----|-----------|
+|--------|-----------------------|-----|------------|
 | q0 | q1 | — | — |
 | q1 | q2 | — | — |
 | q2 | q3 | — | — |
@@ -120,7 +120,7 @@ agrupan caracteres con comportamiento equivalente:
 **Formato**: `usuario@dominio.ext` (ej: `info@empresa.com`)
 
 | Estado | `<ALPHANUM>` | `<ALPHANUM_HYPHEN>` | `.` | `@` | `<LETTERS>` |
-|--------|-------------|--------------------|----|-----|------------|
+|--------|-------------|--------------------|----|-----|-------------|
 | q0 | q1 | — | — | — | — |
 | q1 | — | q1 | q_dot_user | q2 | — |
 | q_dot_user | — | q1 | — | — | — |
@@ -148,7 +148,7 @@ intermedios para separadores (`-` y espacio).
 **Formato**: Entre 6 y 10 dígitos consecutivos (ej: `1234567890`)
 
 | Estado | `<DIGITS>` | Aceptación |
-|--------|-----------|-----------|
+|--------|-----------|------------|
 | q0→q5 | siguiente | No |
 | q6→q10 | siguiente | **Sí** ✓ |
 
@@ -185,6 +185,40 @@ Utiliza **estados compuestos** `(flags, longitud)`:
 - **Aceptación**: `flags = 15` (todos los bits) y `longitud ≥ 8`
 
 Total de estados: 16 × 9 = 144 estados.
+
+---
+
+### 8. Monto de Dinero
+
+**Formato**: Símbolo `$` seguido de dígitos, con separador de miles opcional
+usando punto (ej: `$3000`, `$1.500.000`)
+
+**Reglas**:
+- El símbolo `$` es obligatorio al inicio.
+- Debe haber al menos un dígito después del `$`.
+- El punto (`.`) actúa como separador de miles y debe ir seguido de exactamente
+  3 dígitos.
+- Se permiten múltiples grupos de miles encadenados (ej: `$1.000.000`).
+
+| Estado | `$` | `<DIGITS>` | `.` |
+|--------|-----|-----------|-----|
+| q0 | q_dollar | — | — |
+| q_dollar | — | q_d1 | — |
+| **q_d1** ✓ | — | q_d1 | q_dot |
+| q_dot | — | q_m1 | — |
+| q_m1 | — | q_m2 | — |
+| q_m2 | — | q_m3 | — |
+| **q_m3** ✓ | — | — | q_dot |
+
+**Diagrama de transiciones**:
+
+```
+         $          <DIGITS>        .         <DIGITS>      <DIGITS>      <DIGITS>
+(q0) --------→ (q_dollar) -----→ ((q_d1)) -----→ (q_dot) -----→ (q_m1) -----→ (q_m2) -----→ ((q_m3))
+                                   ↑  ↑                                                          |
+                                   |  └── <DIGITS> (loop)                                    . ──→ (q_dot)
+                                   └── (loop)
+```
 
 ---
 
@@ -318,6 +352,21 @@ python -m pytest tests/ -v
 | `Ab1@` | ❌ Rechazada | Muy corta (4 chars) |
 | `Abcdefg1` | ❌ Rechazada | Sin carácter especial |
 
+### Monto de Dinero
+
+| Entrada | Resultado | Motivo |
+|---------|-----------|--------|
+| `$3000` | ✅ Aceptada | Monto sin separador |
+| `$1.500` | ✅ Aceptada | Con separador de miles |
+| `$1.000.000` | ✅ Aceptada | Millón con dos separadores |
+| `$100.000` | ✅ Aceptada | Cien mil con separador |
+| `$0` | ✅ Aceptada | Cero pesos |
+| `3000` | ❌ Rechazada | Falta símbolo `$` |
+| `$` | ❌ Rechazada | Sin dígitos |
+| `$.500` | ❌ Rechazada | Punto sin dígitos previos |
+| `$1.00` | ❌ Rechazada | Grupo de miles incompleto (2 dígitos) |
+| `$1.` | ❌ Rechazada | Punto al final sin grupo |
+
 ---
 
 ## Tecnologías Utilizadas
@@ -343,13 +392,13 @@ de Autómatas Finitos Deterministas que procesan las cadenas símbolo por símbo
 
 - Se implementó exitosamente un motor de reconocimiento de lenguajes regulares
   basado en la teoría formal de autómatas.
-- Los 7 autómatas implementados cubren patrones de uso real: placas vehiculares,
-  correos electrónicos, teléfonos, documentos de identidad, URLs, fechas y
-  contraseñas seguras.
+- Los 8 autómatas implementados cubren patrones de uso real: placas vehiculares,
+  correos electrónicos, teléfonos, documentos de identidad, URLs, fechas,
+  contraseñas seguras y montos de dinero.
 - La interfaz web ofrece validación en tiempo real y un constructor de
   formularios dinámico que permite al usuario personalizar los campos y sus
   validaciones.
 - El procesamiento es estrictamente lineal (O(n)), siguiendo la definición
   formal de un AFD sin retroceso.
-- Se verificó el correcto funcionamiento con 29 casos de prueba automatizados
+- Se verificó el correcto funcionamiento con casos de prueba automatizados
   que cubren escenarios válidos e inválidos para cada patrón.
