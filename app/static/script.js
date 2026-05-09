@@ -35,8 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await res.json();
 
                     if (data.valid) {
+                        window.currentTraceData = data.trace;
+                        window.currentTraceText = data.text;
+                        window.currentEvaluations = data.evaluations; // store evaluations
+                        window.currentGraphSyntax = data.graph_syntax;
                         valResult.className = 'result valid';
-                        valResult.textContent = `Entrada Aceptada — ${data.type}`;
+                        valResult.innerHTML = `Entrada Aceptada — ${data.type} <button type="button" class="btn btn-secondary btn-sm" style="margin-left: 1rem; padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="openTrace('${data.type}', '${data.text}')">▶ Ver Funcionamiento</button>`;
                     } else {
                         valResult.className = 'result invalid';
                         valResult.textContent = 'Entrada Rechazada — Ningún patrón coincide';
@@ -59,7 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
             'Fecha': 'match-fecha',
             'Contraseña Segura': 'match-password',
             'Monto de Dinero': 'match-dinero',
+            'Dirección Física': 'match-direccion',
         };
+
+        const extFile = document.getElementById('extFile');
+        if (extFile) {
+            extFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('extText').value = evt.target.result;
+                };
+                reader.readAsText(file);
+            });
+        }
 
         extractForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -82,12 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     let html = `<div class="result-header">Se detectaron <strong>${data.count}</strong> coincidencias clasificadas:</div><div>`;
                     data.matches.forEach((match, i) => {
                         const cls = typeClass[match.type] || 'match-placa';
-                        html += `<span class="match-item ${cls}" style="animation-delay:${i * 0.05}s">
+                        html += `<span class="match-item ${cls}" style="animation-delay:${i * 0.05}s; cursor:pointer;" onclick="fetchAndOpenTrace('${match.type}', '${escapeHtml(match.text)}')" title="Clic para ver paso a paso">
                             <span class="match-text">${escapeHtml(match.text)}</span>
                             <span class="match-type">${match.type}</span>
                         </span>`;
                     });
-                    html += '</div>';
+                    html += `</div><p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">💡 Haz clic en cualquier etiqueta extraída para ver cómo el autómata la reconoció paso a paso.</p>`;
                     extResult.innerHTML = html;
                 }
             } catch (err) {
@@ -138,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const createArea = document.getElementById('createArea');
     const createFormBtn = document.getElementById('createFormBtn');
     const fieldLabelInput = document.getElementById('fieldLabel');
+    const formContrasenaInput = document.getElementById('formContrasena');
+
+    if (formContrasenaInput) {
+        formContrasenaInput.addEventListener('input', (e) => {
+            updatePasswordStrength('formContrasena', e.target.value);
+        });
+    }
 
     if (patternSelect && addFieldBtn && dynamicFields) {
         let patterns = [];
@@ -619,4 +644,220 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => toast.remove(), 350);
         }, 3000);
     }
+
+    // ========================================
+    // TRACE VISUALIZER LOGIC
+    // ========================================
+    let currentTraceSteps = [];
+    let currentStepIdx = 0;
+    let traceInterval = null;
+
+    window.openTrace = function(type, text, traceData = null) {
+        if (traceData) {
+            setupTrace(type, text, traceData, null, null);
+        } else if (window.currentTraceData && window.currentTraceText === text) {
+            setupTrace(type, text, window.currentTraceData, window.currentEvaluations, window.currentGraphSyntax);
+        }
+    };
+
+    window.fetchAndOpenTrace = async function(type, text) {
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('type', type);
+        try {
+            const res = await fetch('/trace', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.trace) {
+                setupTrace(type, text, data.trace, data.evaluations, data.graph_syntax);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    async function renderMermaidGraph(graphStr) {
+        const container = document.getElementById('mermaidContainer');
+        if (!container || !graphStr) return;
+        try {
+            // Eliminar ids conflictivos usando uno temporal
+            const id = 'mermaid-svg-' + Date.now();
+            const { svg } = await mermaid.render(id, graphStr);
+            container.innerHTML = svg;
+        } catch (e) {
+            console.error('Mermaid render error', e);
+        }
+    }
+
+    function setupTrace(type, text, traceData, evaluations = null, graphSyntax = null) {
+        document.getElementById('traceModal').style.display = 'flex';
+        
+        // Mostrar cómo lo identificó
+        let infoHtml = ``;
+        if (evaluations && evaluations.length > 0) {
+            infoHtml += `<div style="text-align:center; margin-bottom: 0.5rem;"><span class="badge">${type}</span></div>`;
+            infoHtml += `<div class="decision-process">`;
+            infoHtml += `<div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem;">Proceso de Decisión:</div>`;
+            
+            evaluations.forEach(ev => {
+                if (ev.status === 'rejected') {
+                    const failChar = ev.failed_at === 'FIN_CADENA' ? 'Fin de cadena' : `'${ev.failed_at}'`;
+                    infoHtml += `
+                    <div class="decision-item">
+                        <div class="decision-icon">❌</div>
+                        <div class="decision-content">
+                            <span class="decision-name">${ev.name}</span>
+                            <span class="decision-reason">Rechazado al leer el carácter <span class="decision-char">${failChar}</span></span>
+                        </div>
+                    </div>`;
+                } else if (ev.status === 'accepted') {
+                    infoHtml += `
+                    <div class="decision-item">
+                        <div class="decision-icon">✅</div>
+                        <div class="decision-content">
+                            <span class="decision-name" style="color: #10B981;">${ev.name}</span>
+                            <span class="decision-reason" style="color: #10B981;">¡Cadena aceptada exitosamente!</span>
+                        </div>
+                    </div>`;
+                }
+            });
+            infoHtml += `</div>`;
+        } else {
+            infoHtml = `<div style="text-align:center;"><span class="badge">${type}</span></div>`;
+        }
+        document.querySelector('.trace-info').innerHTML = infoHtml;
+        
+        const textContainer = document.getElementById('traceTextDisplay');
+        textContainer.innerHTML = '';
+        for (let i = 0; i < text.length; i++) {
+            const span = document.createElement('span');
+            span.className = 'trace-char';
+            span.textContent = text[i];
+            textContainer.appendChild(span);
+        }
+
+        currentTraceSteps = traceData.steps || [];
+        currentStepIdx = 0;
+        window.currentBaseGraph = graphSyntax;
+        clearInterval(traceInterval);
+        
+        document.getElementById('traceBtnPlay').textContent = 'Reproducir';
+        updateTraceView();
+    }
+
+    function updateTraceView() {
+        const chars = document.querySelectorAll('#traceTextDisplay .trace-char');
+        chars.forEach((c, idx) => {
+            if (idx === currentStepIdx && currentStepIdx < currentTraceSteps.length) {
+                c.classList.add('highlight');
+            } else {
+                c.classList.remove('highlight');
+            }
+        });
+
+        const btnPrev = document.getElementById('traceBtnPrev');
+        const btnNext = document.getElementById('traceBtnNext');
+        
+        if (currentTraceSteps.length === 0) return;
+
+        if (currentStepIdx >= currentTraceSteps.length) {
+            const lastStep = currentTraceSteps[currentTraceSteps.length - 1];
+            document.getElementById('traceCharRead').textContent = '✓ FIN';
+            document.getElementById('traceStateFrom').textContent = lastStep.to;
+            document.getElementById('traceStateTo').textContent = 'ACEPTADO';
+            document.getElementById('traceStateTo').className = 'state-value success';
+            btnNext.disabled = true;
+            btnPrev.disabled = false;
+            return;
+        }
+
+        const step = currentTraceSteps[currentStepIdx];
+        document.getElementById('traceCharRead').textContent = step.char === ' ' ? 'ESPACIO' : step.char;
+        document.getElementById('traceStateFrom').textContent = step.from;
+        
+        if (step.to === null) {
+            document.getElementById('traceStateTo').textContent = 'RECHAZADO';
+            document.getElementById('traceStateTo').className = 'state-value error';
+            clearInterval(traceInterval);
+            document.getElementById('traceBtnPlay').textContent = 'Reproducir';
+            btnNext.disabled = true;
+        } else {
+            document.getElementById('traceStateTo').textContent = step.to;
+            document.getElementById('traceStateTo').className = 'state-value';
+            btnNext.disabled = false;
+        }
+        
+        btnPrev.disabled = currentStepIdx === 0;
+        
+        if (window.currentBaseGraph) {
+            let activeState = null;
+            if (currentStepIdx >= currentTraceSteps.length) {
+                activeState = currentTraceSteps[currentTraceSteps.length - 1].to;
+            } else {
+                activeState = currentTraceSteps[currentStepIdx].from;
+            }
+            if (activeState) {
+                renderMermaidGraph(window.currentBaseGraph + `\n    class ${activeState} active;`);
+            }
+        }
+    }
+
+    const closeTrace = document.getElementById('closeTrace');
+    if (closeTrace) {
+        closeTrace.addEventListener('click', () => {
+            document.getElementById('traceModal').style.display = 'none';
+            clearInterval(traceInterval);
+        });
+    }
+
+    const btnNext = document.getElementById('traceBtnNext');
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            if (currentStepIdx < currentTraceSteps.length) {
+                currentStepIdx++;
+                updateTraceView();
+            }
+        });
+    }
+
+    const btnPrev = document.getElementById('traceBtnPrev');
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            if (currentStepIdx > 0) {
+                currentStepIdx--;
+                updateTraceView();
+            }
+        });
+    }
+
+    const btnPlay = document.getElementById('traceBtnPlay');
+    if (btnPlay) {
+        btnPlay.addEventListener('click', () => {
+            if (traceInterval) {
+                clearInterval(traceInterval);
+                traceInterval = null;
+                btnPlay.textContent = 'Reproducir';
+            } else {
+                if (currentStepIdx >= currentTraceSteps.length) {
+                    currentStepIdx = 0;
+                }
+                btnPlay.textContent = 'Pausar';
+                updateTraceView();
+                traceInterval = setInterval(() => {
+                    if (currentStepIdx < currentTraceSteps.length - 1) {
+                        currentStepIdx++;
+                        updateTraceView();
+                    } else if (currentStepIdx === currentTraceSteps.length - 1) {
+                        currentStepIdx++;
+                        updateTraceView();
+                        clearInterval(traceInterval);
+                        traceInterval = null;
+                        btnPlay.textContent = 'Reproducir';
+                    } else {
+                        clearInterval(traceInterval);
+                        traceInterval = null;
+                        btnPlay.textContent = 'Reproducir';
+                    }
+                }, 800);
+            }
+        });
+    }
+
 });

@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.automata import (
     dfa_placa, dfa_email, dfa_telefono, dfa_documento,
-    dfa_url, dfa_fecha, dfa_password, dfa_dinero, extract_matches
+    dfa_url, dfa_fecha, dfa_password, dfa_dinero, dfa_texto_libre, dfa_direccion, extract_matches
 )
 from app.db import formularios_col, preguntas_col, respuestas_col, generar_codigo
 from bson import ObjectId
@@ -39,11 +39,13 @@ dfas = {
     "Fecha": dfa_fecha,
     "Contraseña Segura": dfa_password,
     "Monto de Dinero": dfa_dinero,
+    "Dirección Física": dfa_direccion,
+    "Texto Libre": dfa_texto_libre,
 }
 
 # Mensajes de ayuda por tipo de patrón
 PATTERN_HINTS = {
-    "Placa Colombiana": "3 letras mayúsculas, guión, 4 dígitos (ej: ABC-1234)",
+    "Placa Colombiana": "3 letras mayúsculas y 3 o 4 dígitos (ej: ABC-123, KJH 452, XYZ9999)",
     "Correo Electrónico": "usuario@dominio.ext (ej: info@empresa.com)",
     "Teléfono": "10 dígitos o +código país (ej: 3001234567, +573001234567)",
     "Documento de Identidad": "Entre 6 y 10 dígitos (ej: 1234567890)",
@@ -51,6 +53,8 @@ PATTERN_HINTS = {
     "Fecha": "DD/MM/YYYY, YYYY-MM-DD o mes textual (ej: 15/10/2026, enero-01-2026)",
     "Contraseña Segura": "Mín. 8 caracteres: 1 mayúscula, 1 minúscula, 1 dígito, 1 especial (@#$%^&*!_-.)",
     "Monto de Dinero": "Símbolo $ + dígitos, separador de miles con punto (ej: $3000, $1.500.000)",
+    "Dirección Física": "Dirección colombiana (ej: Calle 10 con Carrera 15, cra 19 # 40 - 65)",
+    "Texto Libre": "Cualquier texto (ej: comentarios, notas)",
 }
 
 
@@ -94,11 +98,25 @@ async def validate_string(text: str = Form(...)):
     if not text.strip():
         return {"valid": False, "text": text, "type": None}
 
+    evaluations = []
     for name, automata in dfas.items():
-        if automata.validate(text):
-            return {"valid": True, "text": text, "type": name}
+        if name == "Texto Libre":
+            continue
+            
+        trace_result = automata.trace(text)
+        if trace_result["valid"]:
+            evaluations.append({"name": name, "status": "accepted"})
+            return {
+                "valid": True, "text": text, "type": name, 
+                "trace": trace_result, "evaluations": evaluations,
+                "graph_syntax": automata.get_mermaid_graph()
+            }
+        else:
+            failed_step = len(trace_result["steps"])
+            failed_char = text[failed_step] if failed_step < len(text) else "FIN_CADENA"
+            evaluations.append({"name": name, "status": "rejected", "failed_at": failed_char})
 
-    return {"valid": False, "text": text, "type": None}
+    return {"valid": False, "text": text, "type": None, "evaluations": evaluations}
 
 
 @app.post("/validate-field")
@@ -130,6 +148,8 @@ async def extract_from_text(text: str = Form(...)):
     all_matches = []
 
     for name, automata in dfas.items():
+        if name == "Texto Libre":
+            continue
         matches = extract_matches(automata, text)
         for m in matches:
             # Avoid duplicate matches with the exact same type and string
@@ -138,6 +158,44 @@ async def extract_from_text(text: str = Form(...)):
                 all_matches.append(match_obj)
 
     return {"matches": all_matches, "count": len(all_matches)}
+
+@app.post("/trace")
+async def trace_automata(text: str = Form(...), type: str = Form(...)):
+    """
+    Ruta para visualizar paso a paso la ejecución de un autómata específico sobre una cadena.
+    """
+    if type not in dfas:
+        return {"error": "Automata no encontrado"}
+        
+    evaluations = []
+    for name, automata in dfas.items():
+        if name == "Texto Libre":
+            continue
+            
+        trace_result = automata.trace(text)
+        if name == type:
+            evaluations.append({"name": name, "status": "accepted"})
+            return {
+                "text": text,
+                "type": type,
+                "trace": trace_result,
+                "evaluations": evaluations,
+                "graph_syntax": automata.get_mermaid_graph()
+            }
+        else:
+            failed_step = len(trace_result["steps"])
+            failed_char = text[failed_step] if failed_step < len(text) else "FIN_CADENA"
+            evaluations.append({"name": name, "status": "rejected", "failed_at": failed_char})
+            
+    # Fallback just in case
+    automata = dfas[type]
+    return {
+        "text": text,
+        "type": type,
+        "trace": automata.trace(text),
+        "evaluations": evaluations,
+        "graph_syntax": automata.get_mermaid_graph()
+    }
 
 
 @app.get("/health")

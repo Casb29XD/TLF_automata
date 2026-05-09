@@ -48,9 +48,10 @@
             <p class="card-desc">Ingresa un bloque de texto largo. El motor recorrerá linealmente para encontrar y clasificar todas las coincidencias.</p>
             <form id="extractForm">
                 <div class="form-group">
-                    <label for="extText">Bloque de texto</label>
+                    <label for="extText">Bloque de texto o Subir Archivo (.txt)</label>
+                    <input type="file" id="extFile" accept=".txt" class="file-input" style="margin-bottom: 0.5rem; display: block; width: 100%; color: var(--text-secondary); font-size: 0.85rem; padding: 0.4rem 0;">
                     <textarea id="extText" name="text" rows="5"
-                              placeholder="Pega un texto largo aquí. El motor buscará correos, placas, teléfonos, URLs, fechas y más…"></textarea>
+                              placeholder="Pega un texto largo aquí o sube un archivo .txt arriba. El motor buscará correos, placas, teléfonos, URLs, fechas y más…"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">
                     Extraer y Clasificar Coincidencias
@@ -64,6 +65,49 @@
         </footer>
     </div>
 
-    <script src="/static/script.js?v=3"></script>
+    <!-- Trace Visualizer Modal -->
+    <div id="traceModal" class="trace-modal" style="display: none;">
+        <div class="trace-modal-content">
+            <div class="trace-header">
+                <h2>Visualizador de Autómata</h2>
+                <button id="closeTrace" class="close-btn">&times;</button>
+            </div>
+            <div class="trace-body">
+                <div class="trace-info" style="margin-bottom: 1rem; text-align: center;">
+                    <span class="badge" id="traceTypeBadge">Tipo</span>
+                </div>
+                <div class="trace-text-container" id="traceTextDisplay">
+                    <!-- Text chars will be injected here as spans -->
+                </div>
+                <div class="trace-state-info">
+                    <div class="state-box">
+                        <span class="state-label">Estado Anterior</span>
+                        <span class="state-value" id="traceStateFrom">-</span>
+                    </div>
+                    <div class="state-transition">
+                        <span class="transition-char" id="traceCharRead">?</span>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="state-box">
+                        <span class="state-label">Nuevo Estado</span>
+                        <span class="state-value" id="traceStateTo">-</span>
+                    </div>
+                </div>
+                <div id="mermaidContainer" class="mermaid-wrapper"></div>
+                
+                <div class="trace-controls">
+                    <button id="traceBtnPrev" class="btn btn-secondary" disabled>&#9664; Anterior</button>
+                    <button id="traceBtnPlay" class="btn btn-primary">Reproducir</button>
+                    <button id="traceBtnNext" class="btn btn-secondary">Siguiente &#9654;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    </script>
+    <script src="/static/script.js?v=5"></script>
 </body>
 </html>

@@ -32,6 +32,8 @@ class Automata:
         # Validar usando clases de caracteres para simplificar la definición de delta
         # Orden: más específico primero para evitar ambigüedades
         for key, next_state in transitions.items():
+            if key == '<ANY>':
+                return next_state
             if key == '<UPPERCASE_LETTERS>' and symbol.isalpha() and symbol.isupper():
                 return next_state
             if key == '<LOWERCASE_LETTERS>' and symbol.isalpha() and symbol.islower():
@@ -69,6 +71,67 @@ class Automata:
         
         # La cadena es válida si termina en un estado de aceptación
         return current_state in self.F
+
+    def trace(self, string):
+        """
+        Retorna la traza de ejecución del autómata para la cadena dada.
+        Útil para la visualización paso a paso en el frontend.
+        """
+        current_state = self.q0
+        steps = []
+        
+        for char in string:
+            prev_state = current_state
+            current_state = self._get_transition(current_state, char)
+            steps.append({
+                'char': char,
+                'from': prev_state,
+                'to': current_state
+            })
+            if current_state is None:
+                return {'valid': False, 'steps': steps}
+                
+        return {
+            'valid': current_state in self.F,
+            'steps': steps,
+            'final_state': current_state,
+            'is_acceptance': current_state in self.F
+        }
+
+    def get_mermaid_graph(self):
+        """
+        Genera la sintaxis Mermaid para visualizar el grafo del autómata.
+        """
+        lines = ["graph LR"]
+        
+        # Add nodes
+        for q in self.Q:
+            if q in self.F:
+                lines.append(f"    {q}((({q})))")
+            else:
+                lines.append(f"    {q}(({q}))")
+                
+        # Explicit start node
+        lines.append(f"    START(( )) --> {self.q0}")
+        lines.append(f"    class START invisible;")
+        
+        # Add transitions
+        for state, trans in self.delta.items():
+            for char, next_state in trans.items():
+                label = char.replace("<", "[").replace(">", "]").replace('"', '&quot;')
+                if label == " ":
+                    label = "[espacio]"
+                lines.append(f"    {state} -->|\"{label}\"| {next_state}")
+                
+        # Styling classes
+        lines.append("    classDef active fill:#F59E0B,stroke:#333,stroke-width:4px,color:#000 !important;")
+        lines.append("    classDef accept fill:#10B981,stroke:#333,stroke-width:2px,color:#fff;")
+        lines.append("    classDef invisible fill:none,stroke:none;")
+        
+        for q in self.F:
+            lines.append(f"    class {q} accept;")
+            
+        return "\n".join(lines)
 
 
 def extract_matches(automata, text):
@@ -112,7 +175,6 @@ def extract_matches(automata, text):
             
     return matches
 
-
 # ==========================================
 # DEFINICIÓN DE LOS AUTÓMATAS REQUERIDOS
 # ==========================================
@@ -124,14 +186,14 @@ placa_delta = {
     'q0': {'<UPPERCASE_LETTERS>': 'q1'},
     'q1': {'<UPPERCASE_LETTERS>': 'q2'},
     'q2': {'<UPPERCASE_LETTERS>': 'q3'},
-    'q3': {'-': 'q4'},
+    'q3': {'-': 'q4', ' ': 'q4', '<DIGITS>': 'q5'},
     'q4': {'<DIGITS>': 'q5'},
     'q5': {'<DIGITS>': 'q6'},
     'q6': {'<DIGITS>': 'q7'},
     'q7': {'<DIGITS>': 'q8'}
 }
 placa_q0 = 'q0'
-placa_F = ['q8']
+placa_F = ['q7', 'q8']
 
 dfa_placa = Automata(placa_Q, placa_sigma, placa_delta, placa_q0, placa_F)
 
@@ -249,43 +311,49 @@ dfa_url = Automata(url_Q, url_sigma, url_delta, url_q0, url_F)
 # 6. AFD para Fechas
 # Acepta formatos flexibles con '-' o '/' (ej: DD/MM/YYYY, YYYY-MM-DD, 12-may-2026)
 fecha_delta = {
-    'q0': {'<DIGITS>': 'q_d1', '<LETTERS>': 'q_l1'},
+    'q0': {'<DIGITS>': 'q_d1'},
     
-    # Bloque 1
-    'q_d1': {'<DIGITS>': 'q_d2', '/': 'q_sep1', '-': 'q_sep1'},
-    'q_d2': {'<DIGITS>': 'q_d3', '/': 'q_sep1', '-': 'q_sep1'},
+    # Bloque 1 (Sólo dígitos)
+    'q_d1': {'<DIGITS>': 'q_d2', '/': 'q_sep1', '-': 'q_sep1', ' ': 'q_sp1'},
+    'q_d2': {'<DIGITS>': 'q_d3', '/': 'q_sep1', '-': 'q_sep1', ' ': 'q_sp1'},
     'q_d3': {'<DIGITS>': 'q_d4'},
-    'q_d4': {'/': 'q_sep1', '-': 'q_sep1'},
+    'q_d4': {'/': 'q_sep1', '-': 'q_sep1', ' ': 'q_sp1'},
     
-    'q_l1': {'<LETTERS>': 'q_l1_loop', '/': 'q_sep1', '-': 'q_sep1'},
-    'q_l1_loop': {'<LETTERS>': 'q_l1_loop', '/': 'q_sep1', '-': 'q_sep1'},
+    # Separador " de " o " del " (Fase 1)
+    'q_sp1': {'d': 'q_sp1_d'},
+    'q_sp1_d': {'e': 'q_sp1_de'},
+    'q_sp1_de': {' ': 'q_sep1', 'l': 'q_sp1_del'},
+    'q_sp1_del': {' ': 'q_sep1'},
     
-    # Separador 1
+    # Separador 1 (ya consumido: /, -, " de ", o " del ")
     'q_sep1': {'<DIGITS>': 'q_b2_d1', '<LETTERS>': 'q_b2_l1'},
     
-    # Bloque 2
-    'q_b2_d1': {'<DIGITS>': 'q_b2_d2', '/': 'q_sep2', '-': 'q_sep2'},
-    'q_b2_d2': {'/': 'q_sep2', '-': 'q_sep2'},
+    # Bloque 2 (Dígitos o Letras, ej: 05 o mayo)
+    'q_b2_d1': {'<DIGITS>': 'q_b2_d2', '/': 'q_sep2', '-': 'q_sep2', ' ': 'q_sp2'},
+    'q_b2_d2': {'/': 'q_sep2', '-': 'q_sep2', ' ': 'q_sp2'},
     
-    'q_b2_l1': {'<LETTERS>': 'q_b2_l1_loop', '/': 'q_sep2', '-': 'q_sep2'},
-    'q_b2_l1_loop': {'<LETTERS>': 'q_b2_l1_loop', '/': 'q_sep2', '-': 'q_sep2'},
+    'q_b2_l1': {'<LETTERS>': 'q_b2_l1_loop', '/': 'q_sep2', '-': 'q_sep2', ' ': 'q_sp2'},
+    'q_b2_l1_loop': {'<LETTERS>': 'q_b2_l1_loop', '/': 'q_sep2', '-': 'q_sep2', ' ': 'q_sp2'},
+    
+    # Separador " de " o " del " (Fase 2)
+    'q_sp2': {'d': 'q_sp2_d'},
+    'q_sp2_d': {'e': 'q_sp2_de'},
+    'q_sp2_de': {' ': 'q_sep2', 'l': 'q_sp2_del'},
+    'q_sp2_del': {' ': 'q_sep2'},
     
     # Separador 2
-    'q_sep2': {'<DIGITS>': 'q_b3_d1', '<LETTERS>': 'q_b3_l1'},
+    'q_sep2': {'<DIGITS>': 'q_b3_d1'},
     
-    # Bloque 3
+    # Bloque 3 (Sólo dígitos)
     'q_b3_d1': {'<DIGITS>': 'q_b3_d2'},
     'q_b3_d2': {'<DIGITS>': 'q_b3_d3'},
     'q_b3_d3': {'<DIGITS>': 'q_b3_d4'},
-    'q_b3_d4': {},
-    
-    'q_b3_l1': {'<LETTERS>': 'q_b3_l1_loop'},
-    'q_b3_l1_loop': {'<LETTERS>': 'q_b3_l1_loop'}
+    'q_b3_d4': {}
 }
 fecha_Q = list(fecha_delta.keys())
 fecha_sigma = ['<DIGITS>', '<LETTERS>', '/', '-']
 fecha_q0 = 'q0'
-fecha_F = ['q_b3_d1', 'q_b3_d2', 'q_b3_d4', 'q_b3_l1', 'q_b3_l1_loop']
+fecha_F = ['q_b3_d1', 'q_b3_d2', 'q_b3_d4']
 
 dfa_fecha = Automata(fecha_Q, fecha_sigma, fecha_delta, fecha_q0, fecha_F)
 
@@ -361,3 +429,167 @@ dinero_q0 = 'q0'
 dinero_F = ['q_d1', 'q_m3']
 
 dfa_dinero = Automata(dinero_Q, dinero_sigma, dinero_delta, dinero_q0, dinero_F)
+
+
+# 9. AFD para Texto Libre
+# Acepta cualquier carácter indefinidamente.
+texto_Q = ['q0']
+texto_sigma = ['<ANY>']
+texto_delta = {'q0': {'<ANY>': 'q0'}}
+texto_q0 = 'q0'
+texto_F = ['q0']
+
+dfa_texto_libre = Automata(texto_Q, texto_sigma, texto_delta, texto_q0, texto_F)
+
+
+# 10. AFD para Dirección Física (ej: Calle 10 con Carrera 15, cra 19 # 40 - 65)
+dir_delta = {
+    'q0': {
+        'C': 'q_v1_1', 'c': 'q_v1_1', 
+        'A': 'q_v1_1', 'a': 'q_v1_1', 
+        'T': 'q_v1_1', 't': 'q_v1_1', 
+        'D': 'q_v1_1', 'd': 'q_v1_1', 
+        'V': 'q_v1_1', 'v': 'q_v1_1', 
+        'K': 'q_v1_1', 'k': 'q_v1_1'
+    },
+    'q_v1_1': {
+        '<LETTERS>': 'q_v1_1',
+        ' ': 'q_v1_sp1',
+        '<DIGITS>': 'q_n1'
+    },
+    'q_v1_sp1': {
+        ' ': 'q_v1_sp1',
+        '<DIGITS>': 'q_n1',
+        '<LETTERS>': 'q_v1_2'
+    },
+    'q_v1_2': {
+        '<LETTERS>': 'q_v1_2',
+        ' ': 'q_v1_sp2',
+        '<DIGITS>': 'q_n1'
+    },
+    'q_v1_sp2': {
+        ' ': 'q_v1_sp2',
+        '<DIGITS>': 'q_n1'
+    },
+    'q_n1': {
+        '<DIGITS>': 'q_n1',
+        '<LETTERS>': 'q_n1_l',
+        ' ': 'q_n1_sp',
+        '#': 'q_hash'
+    },
+    'q_n1_l': {
+        '<LETTERS>': 'q_n1_l',
+        ' ': 'q_n1_sp',
+        '#': 'q_hash'
+    },
+    'q_n1_sp': {
+        ' ': 'q_n1_sp',
+        '#': 'q_hash',
+        'c': 'q_con_c',
+        'N': 'q_no_N',
+        'n': 'q_no_N',
+        '<LETTERS>': 'q_n1_l'
+    },
+    'q_con_c': {
+        'o': 'q_con_o',
+        '<LETTERS>': 'q_n1_l',
+        ' ': 'q_n1_sp'
+    },
+    'q_con_o': {
+        'n': 'q_con_n',
+        '<LETTERS>': 'q_n1_l',
+        ' ': 'q_n1_sp'
+    },
+    'q_con_n': {
+        ' ': 'q_con_sp',
+        '<LETTERS>': 'q_n1_l'
+    },
+    'q_no_N': {
+        'o': 'q_no_o',
+        '<LETTERS>': 'q_n1_l',
+        ' ': 'q_n1_sp'
+    },
+    'q_no_o': {
+        ' ': 'q_hash_sp',
+        '.': 'q_no_dot',
+        '<LETTERS>': 'q_n1_l'
+    },
+    'q_no_dot': {
+        ' ': 'q_hash_sp',
+        '<DIGITS>': 'q_n2'
+    },
+    'q_hash': {
+        ' ': 'q_hash_sp',
+        '<DIGITS>': 'q_n2'
+    },
+    'q_hash_sp': {
+        ' ': 'q_hash_sp',
+        '<DIGITS>': 'q_n2'
+    },
+    'q_con_sp': {
+        ' ': 'q_con_sp',
+        '<LETTERS>': 'q_v2_1',
+        '<DIGITS>': 'q_n2_alt'
+    },
+    'q_v2_1': {
+        '<LETTERS>': 'q_v2_1',
+        ' ': 'q_v2_sp1'
+    },
+    'q_v2_sp1': {
+        ' ': 'q_v2_sp1',
+        '<DIGITS>': 'q_n2_alt',
+        '<LETTERS>': 'q_v2_2'
+    },
+    'q_v2_2': {
+        '<LETTERS>': 'q_v2_2',
+        ' ': 'q_v2_sp2'
+    },
+    'q_v2_sp2': {
+        ' ': 'q_v2_sp2',
+        '<DIGITS>': 'q_n2_alt'
+    },
+    'q_n2_alt': {
+        '<DIGITS>': 'q_n2_alt',
+        '<LETTERS>': 'q_n2_alt_l'
+    },
+    'q_n2_alt_l': {
+        '<LETTERS>': 'q_n2_alt_l'
+    },
+    'q_n2': {
+        '<DIGITS>': 'q_n2',
+        '<LETTERS>': 'q_n2_l',
+        ' ': 'q_n2_sp',
+        '-': 'q_dash'
+    },
+    'q_n2_l': {
+        '<LETTERS>': 'q_n2_l',
+        ' ': 'q_n2_sp',
+        '-': 'q_dash'
+    },
+    'q_n2_sp': {
+        ' ': 'q_n2_sp',
+        '-': 'q_dash'
+    },
+    'q_dash': {
+        ' ': 'q_dash_sp',
+        '<DIGITS>': 'q_n3'
+    },
+    'q_dash_sp': {
+        ' ': 'q_dash_sp',
+        '<DIGITS>': 'q_n3'
+    },
+    'q_n3': {
+        '<DIGITS>': 'q_n3',
+        '<LETTERS>': 'q_n3_l'
+    },
+    'q_n3_l': {
+        '<LETTERS>': 'q_n3_l'
+    }
+}
+dir_Q = list(dir_delta.keys())
+dir_sigma = ['<LETTERS>', '<DIGITS>', ' ', '#', '-', '.', 'c', 'o', 'n', 'N']
+dir_q0 = 'q0'
+dir_F = ['q_n2', 'q_n2_l', 'q_n3', 'q_n3_l', 'q_n2_alt', 'q_n2_alt_l']
+
+dfa_direccion = Automata(dir_Q, dir_sigma, dir_delta, dir_q0, dir_F)
+
