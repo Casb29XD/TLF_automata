@@ -681,6 +681,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = 'mermaid-svg-' + Date.now();
             const { svg } = await mermaid.render(id, graphStr);
             container.innerHTML = svg;
+            
+            const svgElement = container.querySelector('svg');
+            if (svgElement && window.svgPanZoom) {
+                if (window.panZoomInstance) {
+                    window.panZoomInstance.destroy();
+                }
+                window.panZoomInstance = svgPanZoom(svgElement, {
+                    zoomEnabled: true,
+                    controlIconsEnabled: true,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.5,
+                    maxZoom: 10
+                });
+            }
         } catch (e) {
             console.error('Mermaid render error', e);
         }
@@ -739,6 +754,11 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(traceInterval);
         
         document.getElementById('traceBtnPlay').textContent = 'Reproducir';
+        
+        if (window.currentBaseGraph) {
+            renderMermaidGraph(window.currentBaseGraph);
+        }
+        
         updateTraceView();
     }
 
@@ -785,18 +805,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         btnPrev.disabled = currentStepIdx === 0;
-        
-        if (window.currentBaseGraph) {
-            let activeState = null;
-            if (currentStepIdx >= currentTraceSteps.length) {
-                activeState = currentTraceSteps[currentTraceSteps.length - 1].to;
-            } else {
-                activeState = currentTraceSteps[currentStepIdx].from;
-            }
-            if (activeState) {
-                renderMermaidGraph(window.currentBaseGraph + `\n    class ${activeState} active;`);
-            }
-        }
     }
 
     const closeTrace = document.getElementById('closeTrace');

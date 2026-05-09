@@ -1082,14 +1082,15 @@ select {
     border-radius: var(--radius);
     padding: 1rem;
     margin: 1.5rem 0;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 250px;
+    overflow: hidden;
+    height: 400px;
+    position: relative;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: flex-start;
+    display: block;
 }
 .mermaid-wrapper svg {
-    max-width: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
 }
 

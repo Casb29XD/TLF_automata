@@ -121,6 +121,18 @@ class Automata:
                 label = char.replace("<", "[").replace(">", "]").replace('"', '&quot;')
                 if label == " ":
                     label = "[espacio]"
+                
+                # Traducción a español para la visualización del grafo
+                label = label.replace("[UPPERCASE_LETTERS]", "[MAYÚSCULAS]")
+                label = label.replace("[LOWERCASE_LETTERS]", "[MINÚSCULAS]")
+                label = label.replace("[LETTERS]", "[LETRAS]")
+                label = label.replace("[DIGITS]", "[DÍGITOS]")
+                label = label.replace("[ALPHANUM]", "[ALFANUMÉRICO]")
+                label = label.replace("[ALPHANUM_HYPHEN]", "[ALFANUM_GUIÓN]")
+                label = label.replace("[SPECIALS]", "[ESPECIALES]")
+                label = label.replace("[URL_CHARS]", "[CARS_URL]")
+                label = label.replace("[ANY]", "[CUALQUIERA]")
+                
                 lines.append(f"    {state} -->|\"{label}\"| {next_state}")
                 
         # Styling classes
