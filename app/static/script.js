@@ -677,16 +677,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('mermaidContainer');
         if (!container || !graphStr) return;
         try {
-            // Eliminar ids conflictivos usando uno temporal
+            // Save pan/zoom state
+            let currentPan = null;
+            let currentZoom = null;
+            if (window.panZoomInstance) {
+                currentPan = window.panZoomInstance.getPan();
+                currentZoom = window.panZoomInstance.getZoom();
+                window.panZoomInstance.destroy();
+                window.panZoomInstance = null;
+            }
+
             const id = 'mermaid-svg-' + Date.now();
             const { svg } = await mermaid.render(id, graphStr);
             container.innerHTML = svg;
             
             const svgElement = container.querySelector('svg');
             if (svgElement && window.svgPanZoom) {
-                if (window.panZoomInstance) {
-                    window.panZoomInstance.destroy();
-                }
                 window.panZoomInstance = svgPanZoom(svgElement, {
                     zoomEnabled: true,
                     controlIconsEnabled: true,
@@ -695,6 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     minZoom: 0.5,
                     maxZoom: 10
                 });
+                
+                // Restore pan/zoom state
+                if (currentPan !== null && currentZoom !== null) {
+                    window.panZoomInstance.zoom(currentZoom);
+                    window.panZoomInstance.pan(currentPan);
+                }
             }
         } catch (e) {
             console.error('Mermaid render error', e);
@@ -754,11 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(traceInterval);
         
         document.getElementById('traceBtnPlay').textContent = 'Reproducir';
-        
-        if (window.currentBaseGraph) {
-            renderMermaidGraph(window.currentBaseGraph);
-        }
-        
         updateTraceView();
     }
 
@@ -805,6 +812,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         btnPrev.disabled = currentStepIdx === 0;
+        
+        btnPrev.disabled = currentStepIdx === 0;
+        
+        if (window.currentBaseGraph) {
+            let activeState = null;
+            let activeGraph = window.currentBaseGraph;
+            
+            if (currentStepIdx >= currentTraceSteps.length) {
+                activeState = currentTraceSteps[currentTraceSteps.length - 1].to;
+                activeGraph += `\n    class ${activeState} active;`;
+            } else {
+                activeState = currentTraceSteps[currentStepIdx].from;
+                const nextState = currentTraceSteps[currentStepIdx].to;
+                activeGraph += `\n    class ${activeState} active;`;
+                
+                if (nextState) {
+                    const lines = window.currentBaseGraph.split('\n');
+                    let linkIdx = 0;
+                    for (let line of lines) {
+                        if (line.includes('-->')) {
+                            const parts = line.split('-->');
+                            if (parts.length >= 2) {
+                                const fromNode = parts[0].trim();
+                                const toNodeMatch = parts[1].split('|');
+                                const toNode = toNodeMatch[toNodeMatch.length - 1].trim();
+                                if (fromNode === activeState && toNode === nextState) {
+                                    activeGraph += `\n    linkStyle ${linkIdx} stroke:#F59E0B,stroke-width:4px;`;
+                                    break;
+                                }
+                            }
+                            linkIdx++;
+                        }
+                    }
+                }
+            }
+            if (activeState) {
+                renderMermaidGraph(activeGraph);
+            }
+        }
     }
 
     const closeTrace = document.getElementById('closeTrace');

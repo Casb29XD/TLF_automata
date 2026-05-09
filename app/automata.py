@@ -122,7 +122,6 @@ class Automata:
                 if label == " ":
                     label = "[espacio]"
                 
-                # Traducción a español para la visualización del grafo
                 label = label.replace("[UPPERCASE_LETTERS]", "[MAYÚSCULAS]")
                 label = label.replace("[LOWERCASE_LETTERS]", "[MINÚSCULAS]")
                 label = label.replace("[LETTERS]", "[LETRAS]")
