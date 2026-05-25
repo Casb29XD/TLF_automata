@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 createFormBtn.disabled = true;
-                createFormBtn.textContent = '⏳ Creando…';
+                createFormBtn.textContent = 'Creando…';
 
                 try {
                     const res = await fetch('/api/formularios', {
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error(err);
                 } finally {
                     createFormBtn.disabled = false;
-                    createFormBtn.textContent = '🚀 Crear Formulario y Obtener Código';
+                    createFormBtn.textContent = 'Crear Formulario y Obtener Código';
                 }
             });
         }
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             responderError.style.display = 'none';
             cargarFormBtn.disabled = true;
-            cargarFormBtn.textContent = '⏳ Cargando…';
+            cargarFormBtn.textContent = 'Cargando…';
 
             try {
                 const res = await fetch(`/api/formularios/${codigo}`);
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
             } finally {
                 cargarFormBtn.disabled = false;
-                cargarFormBtn.textContent = '🔍 Cargar Formulario';
+                cargarFormBtn.textContent = 'Cargar Formulario';
             }
         });
     }
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
 
             enviarRespuestaBtn.disabled = true;
-            enviarRespuestaBtn.textContent = '⏳ Enviando…';
+            enviarRespuestaBtn.textContent = 'Enviando…';
 
             try {
                 const res = await fetch(`/api/formularios/${responderState.codigo}/respuestas`, {
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resultadosError.style.display = 'none';
             verRespuestasBtn.disabled = true;
-            verRespuestasBtn.textContent = '⏳ Cargando…';
+            verRespuestasBtn.textContent = 'Cargando…';
 
             try {
                 const res = await fetch(`/api/formularios/${codigo}/respuestas/ver`, {
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
             } finally {
                 verRespuestasBtn.disabled = false;
-                verRespuestasBtn.textContent = '📊 Ver Respuestas';
+                verRespuestasBtn.textContent = 'Ver Respuestas';
             }
         });
     }
